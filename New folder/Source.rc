@@ -1,0 +1,3 @@
+#include "Source.h"
+
+IDBITMAP_IMAGE BITMAP "Smiley.bmp"
