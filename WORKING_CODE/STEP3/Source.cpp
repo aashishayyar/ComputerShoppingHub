@@ -9,9 +9,6 @@
 #define COMBOBOXWIDTH  0.2
 #define COMBOBOXHEIGHT 0.2
 
-#define XK_S 0x53
-#define XK_s 0x73
-
 int windowWidth, windowHeight; 
 
 HWND ghwnd;
@@ -82,11 +79,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	void uninitialize(void);
-	void CreateComboBox(int, int, int, node_t *, HWND *);
+	void CreateComboBox(int, int, node_t *, HWND *);
 	void GetIndexInComboBox(LPARAM, int *, int *);
-	bool GetNodeForString(int, int, int *, node_t **);
+	bool GetNodeForString(int, int, node_t **);
 	void SetMainThreadIndex(LPARAM);
-	void printFile(void);
 
 	PAINTSTRUCT ps;
 	HDC hdc, hMemdc;
@@ -96,7 +92,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	int iIndexComboBox = -1, iIndexOfElement;
 	static int currIndexComboBox;
 	node_t *nodeForString;
-	int number_of_elements;
 
 	switch (iMsg)
 	{
@@ -138,25 +133,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		windowWidth  = LOWORD(lParam);
 		windowHeight = HIWORD(lParam);
 		break;	
-	case WM_LBUTTONDOWN:
-//		SetFocus(hwnd);	
-		break;	
 	case WM_COMMAND:
-        if(HIWORD(wParam) == CBN_SELCHANGE)
+        if((HIWORD(wParam) == CBN_SELCHANGE))
         { 	
 
         	SetMainThreadIndex(lParam);
 
         	GetIndexInComboBox(lParam, &iIndexComboBox, &iIndexOfElement);	
 
-        	if (GetNodeForString(iIndexComboBox, iIndexOfElement, &number_of_elements, &nodeForString) == true)
+        	if (GetNodeForString(iIndexComboBox, iIndexOfElement, &nodeForString) == true)
         	{	
 	        	int x = iIndexComboBox    * 25 + 35;
 	        	int y = main_thread_index * 10 + 10;
 
-	        	CreateComboBox(x, y, number_of_elements, nodeForString, &hwndComboBox[main_thread_index][iIndexComboBox + 1]);
+	        	CreateComboBox(x, y, nodeForString, &hwndComboBox[main_thread_index][iIndexComboBox + 1]);
         	}
-
 /*
         	for (int i = 0; i < 2; i++)
         	{
@@ -167,24 +158,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		    		break;
 		    	}
 		    }	
-  
-*/      }
-        else if (HIWORD(wParam) == CBN_CLOSEUP)
-        {
-        		SetFocus(hwnd);	
-        }	
-        break;		
+*/  
+        }
+    break;		
 
 	case WM_KEYDOWN:
 			switch(wParam)
 			{
 				case VK_ESCAPE:
-						DestroyWindow(ghwnd);
+					DestroyWindow(ghwnd);
 				break;
-				case XK_S:
-				case XK_s:
-						printFile();
-					break;
 			}
 		break;	
 
@@ -197,14 +180,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 void InitializeComboBoxes(void)
 {
-	void CreateComboBox(int, int, int, node_t *, HWND *);
+	void CreateComboBox(int, int, node_t *, HWND *);
 
-	CreateComboBox(10, 10, ( sizeof(MS_Subbulakshmi)   / sizeof(MS_Subbulakshmi[0])), MS_Subbulakshmi, &hwndComboBox[0][0]);
+	node_t *abc = arr; 
+	if ( (sizeof(*abc) / sizeof(main_node[0])) == 2)
+		MessageBox(NULL, TEXT("NULL"), TEXT("NULL"), NULL);
 
-	CreateComboBox(10, 20, ( sizeof(KA_KishoriAmonkar) / sizeof(KA_KishoriAmonkar[0])), KA_KishoriAmonkar, &hwndComboBox[1][0]);
+	CreateComboBox(10, 10, MS_Subbulakshmi,   &hwndComboBox[0][0]);
+
+	CreateComboBox(10, 20, KA_KishoriAmonkar, &hwndComboBox[1][0]);
 }
 
-void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndComboBox)
+void CreateComboBox (int xpos, int ypos, node_t *node, HWND *hwndComboBox)
 {
 #define PERCENT 		100.0f
 #define COMBOBOX_WIDTH  0.15
@@ -220,28 +207,19 @@ void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndCombo
 
 
     HWND hwndCWComboBox = CreateWindow(WC_COMBOBOX, TEXT("***TESTING***"), 
-         							  CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+         							  CBS_DROPDOWN | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
          							  xpos, ypos, comboBoxWidth, comboBoxHeight, hwndParent, NULL, ghInstance, NULL);
 	
 
 	TCHAR Temp[255]; 
     memset(&Temp,0,sizeof(Temp));       
-    for (int k = 0; k < size; k++)
+    for (int k = 0; k <= ; k++)
     {
         wcscpy_s((wchar_t *)Temp, sizeof(Temp)/sizeof(TCHAR),  (wchar_t *)node[k].name);
         SendMessage(hwndCWComboBox,(UINT) CB_ADDSTRING,(WPARAM) 0,(LPARAM) Temp); 
     }  
 
-  BOOL result =  ComboBox_SetCueBannerText(hwndCWComboBox, TEXT("Search"));
-  // SendMessage(hwndCWComboBox,(UINT) CB_SETCURSEL , (WPARAM)2, (LPARAM)0);  
-    SendMessage(hwndCWComboBox, (UINT) CB_SETCUEBANNER, (WPARAM)0, (LPARAM) TEXT("Search"));
-  
-	FILE *fp;
-		fopen_s(&fp, "Receipt", "w");
-
-		fprintf(fp, " Error Message : %lp", result);
-		fclose (fp);
-
+    SendMessage(hwndCWComboBox, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 
     *hwndComboBox = hwndCWComboBox;
 }
@@ -277,7 +255,7 @@ void GetIndexInComboBox(LPARAM lParam, int *indexComboBox, int *indexElement)
 
 }
 
-bool GetNodeForString(int indexComboBox, int indexOfElement, int *number_of_elements, node_t **node)
+bool GetNodeForString(int indexComboBox,int indexOfElement, node_t **node)
 {
 	static node_t temp;
 
@@ -290,26 +268,16 @@ bool GetNodeForString(int indexComboBox, int indexOfElement, int *number_of_elem
 			if (i != indexComboBox)
 				temp = temp.next[maintain_indexElement[main_thread_index][i]];
 			else 
-			{
-				 temp = temp.next[indexOfElement];
-				*node = temp.next;
-				*number_of_elements = temp.size;
-			}
+				*node = temp.next[indexOfElement].next;
 	}
 
 	if((**node).next == NULL)
 	{
-		product_selected[main_thread_index] = temp.name;
-		cost_per_row[main_thread_index]     = atof((**node).name);
+		cost_per_row[main_thread_index] = atof((**node).name);
 		return false;
 	}
-	else 
-	{
-		product_selected[main_thread_index] = NULL;
-		cost_per_row[main_thread_index]     = 0;
-		return true;
-	}
-	
+
+	return true;
 
 /*
 //	static int maintain_indexElement[3];
@@ -344,29 +312,8 @@ bool GetNodeForString(int indexComboBox, int indexOfElement, int *number_of_elem
 */
 }
 
-void printFile(void)
+int GetNumberOfElementsInComboBox(node_t *s_node)
 {
-	FILE *fp;
-	double total = 0;
-
-
-	fopen_s(&fp, "Receipt", "w");
-
-	fprintf(fp, " Welcome Aashish\n\n");
-	fprintf(fp, " Product Chosen \t\t SubType \t\t Price(Rs.)\n");
-
-	for (int i = 0; i < 2; i++)
-	{
-
-		fprintf(fp, " %s \t\t", main_node[i].name);
-		if (product_selected[i] != NULL)
-			fprintf(fp, " %s ", product_selected[i]);
-		fprintf(fp, " \t\t");
-		fprintf(fp, " %f\n", cost_per_row[i]);
-		total = total + cost_per_row[i];
-	}	
-
-	fprintf(fp, "\nTotal \t\t\t\t%f", total);
-
-	fclose (fp);
+	meta_t *run = meta[0];
+	while(run.e_node != NULL )
 }
