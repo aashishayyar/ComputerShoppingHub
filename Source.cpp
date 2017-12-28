@@ -1,5 +1,8 @@
 #include <windows.h>
 #include <CommCtrl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "Source.h"
 
@@ -25,8 +28,6 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-	void InitializeComboBoxes(void);
-
 	WNDCLASSEX wndclass;
 	HWND hwnd;
 	MSG msg;
@@ -51,6 +52,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 	RegisterClassEx(&wndclass);
 
+
+
 	hwnd = CreateWindow(szAppName,
 						TEXT("Store"),
 						WS_OVERLAPPEDWINDOW,
@@ -68,8 +71,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	ShowWindow(hwnd, SW_MAXIMIZE);
 	UpdateWindow(hwnd);
 
-	InitializeComboBoxes();
-
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
@@ -85,12 +86,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	void CreateComboBox(int, int, int, node_t *, HWND *);
 	void GetIndexInComboBox(LPARAM, int *, int *);
 	bool GetNodeForString(int, int, int *, node_t **);
+	void InitializeComboBoxes(void);
 	void SetMainThreadIndex(LPARAM);
 	void printFile(void);
 
+
 	PAINTSTRUCT ps;
 	HDC hdc, hMemdc;
-	HBITMAP hBitmap;
 	static HBITMAP hBitmapRec;
 	static int state = 0;
 	int iIndexComboBox = -1, iIndexOfElement;
@@ -98,41 +100,52 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	node_t *nodeForString;
 	int number_of_elements;
 
+	HBITMAP hBitmap;
+	HDC hdcMain ;
+	HDC hdcImage;
+	BITMAP Bitmap;
+
 	switch (iMsg)
 	{
 	case WM_CREATE:
-/*			OpenClipboard(hwnd);
-			EmptyClipboard();	
-			hBitmap = LoadBitmap(((LPCREATESTRUCT)lParam) -> hInstance, MAKEINTRESOURCE(MY_BITMAP));
-			if(SetClipboardData(CF_BITMAP, hBitmap) == NULL)
-			{
-				MessageBox(hwnd, TEXT("Can't set desired data"), NULL, MB_ICONERROR | MB_OK);
-				CloseClipboard();
-				break;
-			}
-			CloseClipboard();
-
-			OpenClipboard(hwnd);
-			if ((hBitmapRec = (HBITMAP)GetClipboardData(CF_BITMAP)) == NULL)
-			{
-				MessageBox(hwnd, TEXT("Can't access desired data"), NULL, MB_ICONERROR | MB_OK);
-				CloseClipboard();
-				break;
-			}
-			CloseClipboard();
-
-			hBitmapRec = (HBITMAP)LoadImage(GetModuleHandle(NULL), "Smiley.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-			InvalidateRect(hwnd, NULL, TRUE);	
-*/		break;	
+		break;	
 
 	case WM_PAINT:
-/*			hdc = BeginPaint(hwnd, &ps);
-			hMemdc = CreateCompatibleDC(hdc);
-			SelectObject(hMemdc, hBitmap);
-			StretchBlt(hdc, 0, 0, 1024, 768, hMemdc, 0, 0, 800, 600, SRCCOPY);
-			DeleteDC(hMemdc);
-			EndPaint(hwnd, &ps);
-*/		break; 
+			if (screen == 0)
+			{
+				HBITMAP hBitmap = LoadBitmap(ghInstance, MAKEINTRESOURCE(VIOLIN2));
+				HDC hdcMain     = GetDC(hwnd);
+				HDC hdcImage    = CreateCompatibleDC(hdcMain);
+				
+				GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
+
+				SelectObject(hdcImage , hBitmap);
+
+				SetStretchBltMode(hdcMain, COLORONCOLOR);
+				StretchBlt(hdcMain, 0, 0, 1360, 768, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
+
+				DeleteDC(hdcImage);
+				DeleteDC(hdcMain);
+
+			}
+			else if (screen == 1)	
+			{				
+				hBitmap 	= LoadBitmap(ghInstance, MAKEINTRESOURCE(TABLA));
+				hdcMain     = GetDC(hwnd);
+				hdcImage    = CreateCompatibleDC(hdcMain);
+				
+				GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
+
+				SelectObject(hdcImage , hBitmap);
+
+				SetStretchBltMode(hdcMain, COLORONCOLOR);
+				StretchBlt(hdcMain, 0, 0, 1360 , 768, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
+
+				DeleteDC(hdcImage);
+				DeleteDC(hdcMain);
+				screen = 2;	
+			}	
+		break; 
 		
 	case WM_SIZE:
 		windowWidth  = LOWORD(lParam);
@@ -181,10 +194,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				case VK_ESCAPE:
 						DestroyWindow(ghwnd);
 				break;
+				case VK_SPACE:
+				if (screen == 0)
+				{
+					screen = 1;
+					InvalidateRect( hwnd, NULL, TRUE );
+					InitializeComboBoxes();
+				}
+				break;		
 				case XK_S:
 				case XK_s:
 						printFile();
 					break;
+
 			}
 		break;	
 
@@ -198,10 +220,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 void InitializeComboBoxes(void)
 {
 	void CreateComboBox(int, int, int, node_t *, HWND *);
+// ( sizeof(main_node) / sizeof(main_node[0])
 
+
+	int x = 10, y = 10;
+#define X_OFFSET 10
+#define Y_OFFSET 10	
+
+	CreateComboBox(x, y + (0 * Y_OFFSET),  sizeof( Chordophones )   / sizeof ( Chordophones[0]   ), Chordophones, 	&hwndComboBox[0][0]);
+	CreateComboBox(x, y + (1 * Y_OFFSET),  sizeof( Aerophones )     / sizeof ( Aerophones[0]     ), Aerophones, 	&hwndComboBox[1][0]);
+	CreateComboBox(x, y + (2 * Y_OFFSET),  sizeof( Membranophones ) / sizeof ( Membranophones[0] ), Membranophones, &hwndComboBox[2][0]);
+	CreateComboBox(x, y + (3 * Y_OFFSET),  sizeof( Idiophones )     / sizeof ( Idiophones[0]     ), Idiophones, 	&hwndComboBox[3][0]);
+	CreateComboBox(x, y + (4 * Y_OFFSET),  sizeof( Electronic )     / sizeof ( Electronic[0]     ), Electronic, 	&hwndComboBox[4][0]);
+/*
 	CreateComboBox(10, 10, ( sizeof(MS_Subbulakshmi)   / sizeof(MS_Subbulakshmi[0])), MS_Subbulakshmi, &hwndComboBox[0][0]);
 
 	CreateComboBox(10, 20, ( sizeof(KA_KishoriAmonkar) / sizeof(KA_KishoriAmonkar[0])), KA_KishoriAmonkar, &hwndComboBox[1][0]);
+*/
 }
 
 void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndComboBox)
@@ -220,10 +255,9 @@ void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndCombo
 
 
     HWND hwndCWComboBox = CreateWindow(WC_COMBOBOX, TEXT("***TESTING***"), 
-         							  CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+         							  CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_DISABLENOSCROLL | CBS_AUTOHSCROLL | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP,
          							  xpos, ypos, comboBoxWidth, comboBoxHeight, hwndParent, NULL, ghInstance, NULL);
 	
-
 	TCHAR Temp[255]; 
     memset(&Temp,0,sizeof(Temp));       
     for (int k = 0; k < size; k++)
@@ -232,16 +266,15 @@ void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndCombo
         SendMessage(hwndCWComboBox,(UINT) CB_ADDSTRING,(WPARAM) 0,(LPARAM) Temp); 
     }  
 
-  BOOL result =  ComboBox_SetCueBannerText(hwndCWComboBox, TEXT("Search"));
-  // SendMessage(hwndCWComboBox,(UINT) CB_SETCURSEL , (WPARAM)2, (LPARAM)0);  
-    SendMessage(hwndCWComboBox, (UINT) CB_SETCUEBANNER, (WPARAM)0, (LPARAM) TEXT("Search"));
+ // BOOL result =  ComboBox_SetCueBannerText(hwndCWComboBox, TEXT("Search"));
+   SendMessage(hwndCWComboBox,(UINT) CB_SETCURSEL , (WPARAM)0, (LPARAM)0);  
+ //   SendMessage(hwndCWComboBox, (UINT) CB_SETCUEBANNER, (WPARAM)0, (LPARAM) TEXT("Search"));
   
 	FILE *fp;
 		fopen_s(&fp, "Receipt", "w");
 
-		fprintf(fp, " Error Message : %lp", result);
+	//	fprintf(fp, " Error Message : %lp", result);
 		fclose (fp);
-
 
     *hwndComboBox = hwndCWComboBox;
 }
@@ -355,7 +388,7 @@ void printFile(void)
 	fprintf(fp, " Welcome Aashish\n\n");
 	fprintf(fp, " Product Chosen \t\t SubType \t\t Price(Rs.)\n");
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < (sizeof(main_node) / sizeof(main_node[0])); i++)
 	{
 
 		fprintf(fp, " %s \t\t", main_node[i].name);

@@ -1,3 +1,5 @@
 #include "Source.h"
 
-MY_BITMAP BITMAP "Smiley.bmp"
+VIOLIN1 BITMAP "violin.bmp"
+VIOLIN2 BITMAP "violin_2.bmp"
+TABLA 	BITMAP "tabla.bmp"

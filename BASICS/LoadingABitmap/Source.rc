@@ -1,0 +1,3 @@
+#include "Source.h"
+
+IDBITMAP_TEST BITMAP "violin_2.bmp"
