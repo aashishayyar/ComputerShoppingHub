@@ -70,7 +70,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdSh
 	hwnd = CreateWindowEx(WS_EX_APPWINDOW,
 						szAppName,
 						TEXT("TemplateApplication : Aashish Ayyar"),
-						WS_OVERLAPPEDWINDOW,
+						WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
 						CW_USEDEFAULT,
 						CW_USEDEFAULT,
 						CW_USEDEFAULT,
@@ -85,7 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdSh
 	ghInstance = hInstance;				
 
 	// Displaying the window on Screen
-	ShowWindow  (hwnd, nCmdShow);
+	ShowWindow  (hwnd, SW_MAXIMIZE);
 
 	// To send an WM_PAINT message
 	UpdateWindow(hwnd);
@@ -102,38 +102,76 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdSh
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-	HBITMAP hBitmap;
-	HDC hdcMain ;
-	HDC hdcImage;
-	BITMAP Bitmap;
+	void SetBack(HWND hwnd);
+	static bool valid = false;
+	RECT rect;
+	static HWND hwndButton1, hwndButton2;
 
 	switch(iMsg)
 	{
 		case WM_CREATE:
 			break;
 		case WM_PAINT:
-				hBitmap     = LoadBitmap(ghInstance, MAKEINTRESOURCE(IDBITMAP_TEST));
-				if (hBitmap == NULL)
-					MessageBox(NULL, TEXT("HERE1"), TEXT("HERE1"), NULL);	
-				hdcMain     = GetDC(hwnd);
-				if (hdcMain == NULL)
-					MessageBox(NULL, TEXT("HERE2"), TEXT("HERE2"), NULL);						
-				hdcImage    = CreateCompatibleDC(hdcMain);
 				
 
-				GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
-
-				SelectObject(hdcImage , hBitmap);
-
-				SetStretchBltMode(hdcMain, COLORONCOLOR);
-
-				StretchBlt(hdcMain, 0, 0, 100, 100, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
+					SetBack(hwnd);
 				
-				DeleteDC(hdcImage);
 			break;
+		case WM_KEYDOWN:
+				switch(LOWORD(wParam))
+				{
+					case 'V':
+					case 'v':
+							
+							
+						break;
+					case 'B':
+					case 'b':
+							hwndButton1 = CreateWindowEx(WS_EX_WINDOWEDGE, TEXT("BUTTON"), TEXT("OK"), WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 
+															 100, 100, 100, 30, 
+				  											 hwnd, NULL, ghInstance, NULL);
+							hwndButton2 = CreateWindowEx(WS_EX_WINDOWEDGE, TEXT("BUTTON"), TEXT("OK"), WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 
+															 100, 200, 100, 30, 
+				  											 hwnd, NULL, ghInstance, NULL);
+						break;
+					case 'D':
+					case 'd':
+							rect.left = 100;
+							rect.top  = 100;
+							rect.right = 100;
+							rect.bottom = 30;	
+					
+							DestroyWindow(hwndButton1);
+						
+							InvalidateRect(hwnd, &rect, FALSE);
+
+						break;		
+				}
+			break;	
 		case WM_DESTROY:
 			PostQuitMessage(0);	
 			break;	 
 	}
 	return(DefWindowProc(hwnd, iMsg, wParam, lParam));
+}
+
+void SetBack(HWND hwnd)
+{
+	BITMAP Bitmap;
+	PAINTSTRUCT ps;
+	HBITMAP hBitmap = LoadBitmap(ghInstance, MAKEINTRESOURCE(IDBITMAP_TEST));
+
+	HDC hdcMain     = BeginPaint(hwnd, &ps);			
+	HDC hdcImage    = CreateCompatibleDC(hdcMain);
+	
+	GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
+
+	SelectObject(hdcImage , hBitmap);
+
+	SetStretchBltMode(hdcMain, COLORONCOLOR);
+
+	StretchBlt(hdcMain, 0, 0, 1360, 768, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
+	
+	DeleteDC(hdcImage);
+	EndPaint(hwnd, &ps);
 }

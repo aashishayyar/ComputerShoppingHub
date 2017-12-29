@@ -7,6 +7,7 @@
 using namespace std;
 
 int screen = 0;
+bool valid_region = false;
 
 #define MAX_COMBOBOX_NEST  3
 #define MAX_MAIN_THREAD	   5		
@@ -150,7 +151,11 @@ node_t TriveniVeena[] 		= { TEXT("32165"), NULL, 0};
 									// BowedStrings
 node_t Chikara[] 			= { TEXT("48567"), NULL, 0};
 node_t Dilruba[] 			= { TEXT("64235"), NULL, 0};
+
 node_t EktaraViolin[] 		= { TEXT("14567"), NULL, 0};
+node_t FourString[] 		= { TEXT("48759"), NULL, 0};
+node_t SevenString[] 		= { TEXT("88696"), NULL, 0};
+
 node_t Esraj[] 				= { TEXT("95316"), NULL, 0};
 node_t Kamaicha[] 			= { TEXT("45612"), NULL, 0};
 node_t Taus[] 				= { TEXT("65781"), NULL, 0};
@@ -326,10 +331,15 @@ node_t PluckedStrings[] = { {TEXT("***PleaseSelect***"), 	 	PleaseSelect, 			ARR
 							{TEXT("Rubab (instrument)"), 		Rubab, 					ARRAY_SIZE(Rubab)			},
 							{TEXT("Triveni Veena"), 			TriveniVeena, 			ARRAY_SIZE(TriveniVeena)	} };								   
 
+node_t Violin[] 		= { {TEXT("***PleaseSelect***"), 	PleaseSelect, 			ARRAY_SIZE(PleaseSelect)		 },
+							{TEXT("EktaraViolin"), 			EktaraViolin, 			ARRAY_SIZE(EktaraViolin) 		 },
+							{TEXT("Four String"), 			FourString, 			ARRAY_SIZE(FourString)			 },
+							{TEXT("Seven String"), 			SevenString, 			ARRAY_SIZE(SevenString)			 } };
+
 node_t BowedStrings[]   = { {TEXT("***PleaseSelect***"), 	PleaseSelect, 			ARRAY_SIZE(PleaseSelect)		 },
 							{TEXT("Chikara"), 				Chikara, 				ARRAY_SIZE(Chikara)				 },
 							{TEXT("Dilruba"), 				Dilruba, 				ARRAY_SIZE(Dilruba)				 },
-							{TEXT("Ektara Violin"), 		EktaraViolin,			ARRAY_SIZE(EktaraViolin)		 },
+							{TEXT("Violin"), 				Violin,					ARRAY_SIZE(Violin)		 		 },
 							{TEXT("Esraj"), 				Esraj, 					ARRAY_SIZE(Esraj)				 },
 							{TEXT("Kamaicha"), 				Kamaicha, 				ARRAY_SIZE(Kamaicha)			 },
 							{TEXT("Mayuri Vina or Taus"), 	Taus, 					ARRAY_SIZE(Taus)				 },

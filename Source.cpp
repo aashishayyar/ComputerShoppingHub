@@ -84,26 +84,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	void uninitialize(void);
 	void CreateComboBox(int, int, int, node_t *, HWND *);
-	void GetIndexInComboBox(LPARAM, int *, int *);
+	void GetIndexInComboBox(HWND, LPARAM, int *, int *);
 	bool GetNodeForString(int, int, int *, node_t **);
 	void InitializeComboBoxes(void);
 	void SetMainThreadIndex(LPARAM);
 	void printFile(void);
+	void SetBackgroundImage(int screen, HWND hwnd, int cxScreen, int cyScreen);
 
-
-	PAINTSTRUCT ps;
-	HDC hdc, hMemdc;
-	static HBITMAP hBitmapRec;
 	static int state = 0;
 	int iIndexComboBox = -1, iIndexOfElement;
 	static int currIndexComboBox;
 	node_t *nodeForString;
 	int number_of_elements;
 
+
 	HBITMAP hBitmap;
-	HDC hdcMain ;
-	HDC hdcImage;
-	BITMAP Bitmap;
+	HDC 	hdcMain ;
+	HDC 	hdcImage;
+	BITMAP 	Bitmap;
 
 	switch (iMsg)
 	{
@@ -111,40 +109,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		break;	
 
 	case WM_PAINT:
-			if (screen == 0)
-			{
-				HBITMAP hBitmap = LoadBitmap(ghInstance, MAKEINTRESOURCE(VIOLIN2));
-				HDC hdcMain     = GetDC(hwnd);
-				HDC hdcImage    = CreateCompatibleDC(hdcMain);
-				
-				GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
-
-				SelectObject(hdcImage , hBitmap);
-
-				SetStretchBltMode(hdcMain, COLORONCOLOR);
-				StretchBlt(hdcMain, 0, 0, 1360, 768, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
-
-				DeleteDC(hdcImage);
-				DeleteDC(hdcMain);
-
-			}
-			else if (screen == 1)	
-			{				
-				hBitmap 	= LoadBitmap(ghInstance, MAKEINTRESOURCE(TABLA));
-				hdcMain     = GetDC(hwnd);
-				hdcImage    = CreateCompatibleDC(hdcMain);
-				
-				GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
-
-				SelectObject(hdcImage , hBitmap);
-
-				SetStretchBltMode(hdcMain, COLORONCOLOR);
-				StretchBlt(hdcMain, 0, 0, 1360 , 768, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
-
-				DeleteDC(hdcImage);
-				DeleteDC(hdcMain);
-				screen = 2;	
-			}	
+				SetBackgroundImage(screen, hwnd, windowWidth, windowHeight);
+			
 		break; 
 		
 	case WM_SIZE:
@@ -152,42 +118,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		windowHeight = HIWORD(lParam);
 		break;	
 	case WM_LBUTTONDOWN:
-//		SetFocus(hwnd);	
 		break;	
 	case WM_COMMAND:
-        if(HIWORD(wParam) == CBN_SELCHANGE)
-        { 	
+			switch(HIWORD(wParam))
+			{
+				case CBN_SELCHANGE:			
+			        	SetMainThreadIndex(lParam);
 
-        	SetMainThreadIndex(lParam);
+			        	GetIndexInComboBox(hwnd, lParam, &iIndexComboBox, &iIndexOfElement);	
 
-        	GetIndexInComboBox(lParam, &iIndexComboBox, &iIndexOfElement);	
+			        	if (GetNodeForString(iIndexComboBox, iIndexOfElement, &number_of_elements, &nodeForString) == true)
+			        	{	
+				        	int x = iIndexComboBox    * 25 + 35;
+				        	int y = main_thread_index * 10 + 10;
 
-        	if (GetNodeForString(iIndexComboBox, iIndexOfElement, &number_of_elements, &nodeForString) == true)
-        	{	
-	        	int x = iIndexComboBox    * 25 + 35;
-	        	int y = main_thread_index * 10 + 10;
-
-	        	CreateComboBox(x, y, number_of_elements, nodeForString, &hwndComboBox[main_thread_index][iIndexComboBox + 1]);
-        	}
-
-/*
-        	for (int i = 0; i < 2; i++)
-        	{
-	        	if ((HWND)lParam == hwndComboBox[][])
-		    	{   
-		    		int x = i*25 + 35;
-		    		CreateComboBox(x, 10, nodeForString, &hwndComboBox[][i+1]);
-		    		break;
-		    	}
-		    }	
-  
-*/      }
-        else if (HIWORD(wParam) == CBN_CLOSEUP)
-        {
-        		SetFocus(hwnd);	
-        }	
-        break;		
-
+				        	valid_region = true;	
+				        	CreateComboBox(x, y, number_of_elements, nodeForString, &hwndComboBox[main_thread_index][iIndexComboBox + 1]);
+			        	}
+			 		break;
+			 	case CBN_CLOSEUP:
+			 			SetFocus(hwnd);
+			 		break;	       	
+	    	}
+	    break;
+	    	
 	case WM_KEYDOWN:
 			switch(wParam)
 			{
@@ -244,7 +198,7 @@ void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndCombo
 #define PERCENT 		100.0f
 #define COMBOBOX_WIDTH  0.15
 #define COMBOBOX_HEIGHT 0.15
-
+#define MAX_STRING_SIZE 255
 	xpos = ((float)xpos / PERCENT) * windowWidth;
 	ypos = ((float)ypos / PERCENT) * windowHeight;
 
@@ -254,28 +208,19 @@ void CreateComboBox (int xpos, int ypos, int size, node_t *node, HWND *hwndCombo
     HWND hwndParent =  ghwnd; // Handle to the parent window
 
 
-    HWND hwndCWComboBox = CreateWindow(WC_COMBOBOX, TEXT("***TESTING***"), 
-         							  CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_DISABLENOSCROLL | CBS_AUTOHSCROLL | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP,
+    HWND hwndCWComboBox = CreateWindow(WC_COMBOBOX, TEXT("ComboBox"), 
+         							  CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP,
          							  xpos, ypos, comboBoxWidth, comboBoxHeight, hwndParent, NULL, ghInstance, NULL);
-	
-	TCHAR Temp[255]; 
+
+	TCHAR Temp[MAX_STRING_SIZE]; 
     memset(&Temp,0,sizeof(Temp));       
     for (int k = 0; k < size; k++)
     {
         wcscpy_s((wchar_t *)Temp, sizeof(Temp)/sizeof(TCHAR),  (wchar_t *)node[k].name);
         SendMessage(hwndCWComboBox,(UINT) CB_ADDSTRING,(WPARAM) 0,(LPARAM) Temp); 
     }  
-
- // BOOL result =  ComboBox_SetCueBannerText(hwndCWComboBox, TEXT("Search"));
-   SendMessage(hwndCWComboBox,(UINT) CB_SETCURSEL , (WPARAM)0, (LPARAM)0);  
- //   SendMessage(hwndCWComboBox, (UINT) CB_SETCUEBANNER, (WPARAM)0, (LPARAM) TEXT("Search"));
+    SendMessage(hwndCWComboBox,(UINT) CB_SETCURSEL , (WPARAM)0, (LPARAM)0);  
   
-	FILE *fp;
-		fopen_s(&fp, "Receipt", "w");
-
-	//	fprintf(fp, " Error Message : %lp", result);
-		fclose (fp);
-
     *hwndComboBox = hwndCWComboBox;
 }
 
@@ -290,8 +235,10 @@ void SetMainThreadIndex(LPARAM lParam)
 			}	
 }
 
-void GetIndexInComboBox(LPARAM lParam, int *indexComboBox, int *indexElement)
+void GetIndexInComboBox(HWND hwnd, LPARAM lParam, int *indexComboBox, int *indexElement)
 {
+	RECT rect;
+
 	int temp = 0;
 	for (int i = 0; i < MAX_COMBOBOX_NEST; i++)
 		if ((HWND)lParam == hwndComboBox[main_thread_index][i])
@@ -299,14 +246,23 @@ void GetIndexInComboBox(LPARAM lParam, int *indexComboBox, int *indexElement)
 
 	temp = *indexComboBox;
 
+    *indexElement = SendMessage((HWND) lParam, (UINT) CB_GETCURSEL, (WPARAM) 0, (LPARAM) 0);
+
 	while ((temp + 1) < MAX_COMBOBOX_NEST)
 	{
 		if (hwndComboBox[main_thread_index][temp + 1])
+		{	
+			rect.left   = (temp + 1) * 25 + 25;
+			rect.top    = (main_thread_index) * 10 + 10;
+			rect.right  = (rect.left) + 25;
+			rect.bottom = (rect.top)  + 10;
+			
 			DestroyWindow(hwndComboBox[main_thread_index][temp + 1]);
+			InvalidateRect(hwnd, &rect, FALSE);
+		}
 		temp += 1;		
 	}
 
-    *indexElement = SendMessage((HWND) lParam, (UINT) CB_GETCURSEL, (WPARAM) 0, (LPARAM) 0);
 
 }
 
@@ -375,6 +331,36 @@ bool GetNodeForString(int indexComboBox, int indexOfElement, int *number_of_elem
 			
 	}
 */
+}
+
+void SetBackgroundImage(int screen, HWND hwnd,  int cxScreen, int cyScreen)
+{
+	LPTSTR  ImageResource;
+	PAINTSTRUCT ps;
+	switch(screen)
+	{
+		case 0:
+				ImageResource = MAKEINTRESOURCE(VIOLIN2);
+			break;
+		case 1:
+				ImageResource = MAKEINTRESOURCE(TABLA);
+			break;	
+	}
+
+	BITMAP  Bitmap;
+	HBITMAP hBitmap 	= LoadBitmap(ghInstance, ImageResource);
+	HDC 	hdcMain     = BeginPaint(hwnd, &ps);
+	HDC 	hdcImage    = CreateCompatibleDC(hdcMain);
+
+	GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&Bitmap);
+
+	SelectObject(hdcImage , hBitmap);
+
+	SetStretchBltMode(hdcMain, COLORONCOLOR);
+	StretchBlt(hdcMain, 0, 0, cxScreen, cyScreen, hdcImage, 0, 0, Bitmap.bmWidth, Bitmap.bmHeight, SRCCOPY);
+
+	DeleteDC(hdcImage);
+	EndPaint(hwnd, &ps);
 }
 
 void printFile(void)
